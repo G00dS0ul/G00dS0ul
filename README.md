@@ -2,7 +2,6 @@
 
 I am a **Game Developer** in training. I focus on building robust systems with **C#** and mastering software architecture before diving deep into game engines.
 
-- 🔭 I’m currently working on a **Personal Finance & Budget Intelligent System** (A smart console app with Data Persistence, LINQ, and Budget Logic).
 - 🌱 I’m currently learning **Advanced C# (Delegates, Events, JSON Serialization)** and **Game Design Patterns**.
 - 👯 I’m looking to collaborate on **Open Source C# Projects** or **Beginner Game Jams**.
 - 💬 Ask me about **C# Logic, State Machines, and Console UI Systems**.
