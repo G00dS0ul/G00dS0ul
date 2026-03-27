@@ -1,12 +1,12 @@
 ### Hi there 👋
 
-I am a **Game Developer** in training. I focus on building robust systems with **C#** and mastering software architecture before diving deep into game engines.
+I am a **Game Developer**. I focus on building robust systems with **C#** and mastering software architecture.
 
-- 🌱 I’m currently learning **Advanced C# (Delegates, Events, JSON Serialization)** and **Game Design Patterns**.
+- 🌱 I’m currently learning **Advanced C#** and **Game Design Patterns**.
 - 👯 I’m looking to collaborate on **Open Source C# Projects** or **Beginner Game Jams**.
 - 💬 Ask me about **C# Logic, State Machines, and Console UI Systems**.
 - 📫 How to reach me: [LinkedIn: www.linkedin.com/in/iseoluwa-olowogoke-85468322b ]
-- ⚡ Fun fact: I am building complex financial software just to master the logic systems needed for my future RPGs!
+- ⚡ Fun fact: I am building complex financial software just to master the logic systems!
 
 <h3 align="left">Languages and Tools:</h3>
 <p align="left"> 
