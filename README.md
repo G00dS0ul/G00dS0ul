@@ -5,7 +5,7 @@ I am a **Game Developer**. I focus on building robust systems with **C#** and ma
 - 🌱 I’m currently learning **Advanced C#** and **Game Design Patterns**.
 - 👯 I’m looking to collaborate on **Open Source C# Projects** or **Beginner Game Jams**.
 - 💬 Ask me about **C# Logic, State Machines, and Console UI Systems**.
-- 📫 How to reach me: [LinkedIn: www.linkedin.com/in/iseoluwa-olowogoke-85468322b ]
+- 📫 How to reach me: [LinkedIn](https://www.linkedin.com/in/iseoluwa-olowogoke-g00ds0ul)
 - ⚡ Fun fact: I am building complex financial software just to master the logic systems!
 
 <h3 align="left">Languages and Tools:</h3>
