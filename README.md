@@ -21,7 +21,7 @@ I'm a software engineer, specializing in **C# and .NET Desktop Development**. I 
 
   [![GitHub Stats](https://github-readme-stats-lyart-zeta-33.vercel.app/api?username=G00dS0ul&show_icons=true&bg_color=000000&title_color=00FF00&text_color=00FF00&icon_color=00FF00&border_color=00FF00&custom_title=G00dS0ul's%20GitHub%20Stats&v=4)](https://github.com/G00dS0ul)
 
-  [![GitHub Streak](https://streak-stats.demolab.com?user=G00dS0ul&background=000000&border=00FF00&stroke=00FF00&ring=00FF00&fire=00FF00&currStreakNum=00FF00&sideNums=00FF00&currStreakLabel=00FF00&sideLabels=00FF00&dates=00FF00&v=1)](https://github.com/G00dS0ul)
+  [![GitHub Streak](https://github-readme-streak-stats-votl.vercel.app?user=G00dS0ul&background=000000&border=00FF00&stroke=00FF00&ring=00FF00&fire=00FF00&currStreakNum=00FF00&sideNums=00FF00&currStreakLabel=00FF00&sideLabels=00FF00&dates=00FF00&v=2)](https://git.io/streak-stats)
 
   [![GitHub Activity Graph](https://github-readme-activity-graph.vercel.app/graph?username=G00dS0ul&bg_color=000000&color=00FF00&line=00FF00&point=00FF00&area_color=00FF00&area=true&custom_title=G00dS0ul%20Activity%20Graph&v=2)](https://github.com/G00dS0ul)
 
