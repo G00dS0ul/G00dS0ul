@@ -6,7 +6,7 @@ using static Svg;
 static class QuestRenderer
 {
     public const int Slots_ = 6;
-    const int W = 480, H = 160;
+    const int W = 480, H = 200;
 
     /// Always 6 slots so the grid stays even; missing ones become "locked" quests.
     public static List<Repo?> Slots(Profile p) =>
@@ -15,7 +15,7 @@ static class QuestRenderer
     public static string Render(Repo? repo, int index, string login, string? role = null)
     {
         bool left = index % 2 == 0;
-        int bx = left ? 40 : 16, bw = W - 56, by = 10, bh = H - 24;
+        int bx = left ? 40 : 16, bw = W - 56, by = 12, bh = H - 24;
         var sb = new StringBuilder(Open(W, H));
         sb.Append(Frame(W, H, leftRail: left, rightRail: !left));
         sb.Append($"""<rect x="{bx}" y="{by}" width="{bw}" height="{bh}" rx="5" fill="{Panel}" stroke="{Dim}" stroke-opacity=".8"/>""");
@@ -46,17 +46,21 @@ static class QuestRenderer
         // title: show "owner/name" for repos that belong to an org or someone else
         var title = repo.NameWithOwner.StartsWith(login + "/", StringComparison.OrdinalIgnoreCase) ? repo.Name : repo.NameWithOwner;
         sb.Append($"""<text class="big" x="{bx + 16}" y="{by + 56}" fill="{Green}" filter="url(#glow)">{Esc(Trim(title, 30))}</text>""");
+        sb.Append($"""<line x1="{bx + 16}" y1="{by + 66}" x2="{bx + bw - 16}" y2="{by + 66}" stroke="{Dim}" stroke-opacity=".35"/>""");
 
         // description, wrapped to two lines
-        var desc = string.IsNullOrWhiteSpace(repo.Description) ? "No quest log yet. Uncharted territory." : repo.Description!;
-        var lines = Wrap(desc, 50, string.IsNullOrWhiteSpace(role) ? 2 : 1);
+        var desc = !string.IsNullOrWhiteSpace(repo.Description) ? repo.Description!
+                 : contributor ? "Shared guild quest. Open the repo for the full log."
+                 : "No quest log yet. Uncharted territory.";
+        bool hasRole = !string.IsNullOrWhiteSpace(role);
+        var lines = Wrap(desc, 50, hasRole ? 2 : 3);
         for (int i = 0; i < lines.Count; i++)
-            sb.Append($"""<text class="sm" x="{bx + 16}" y="{by + 80 + i * 17}" fill="{Dim}">{Esc(lines[i])}</text>""");
-        if (!string.IsNullOrWhiteSpace(role))
-            sb.Append($"""<text class="sm" x="{bx + 16}" y="{by + 97}" fill="#ffd84d"><tspan fill="{Label}">my role: </tspan>{Esc(Trim(role, 41))}</text>""");
+            sb.Append($"""<text class="sm" x="{bx + 16}" y="{by + 84 + i * 18}" fill="{Dim}">{Esc(lines[i])}</text>""");
+        if (hasRole)
+            sb.Append($"""<text class="sm" x="{bx + 16}" y="{by + 84 + lines.Count * 18 + 8}" fill="#ffd84d"><tspan fill="{Label}">my role: </tspan>{Esc(Trim(role!, 41))}</text>""");
 
         // footer: language · stars · forks · last played
-        int fy = by + bh - 14;
+        int fy = by + bh - 16;
         int x = bx + 16;
         if (repo.Language is not null)
         {
@@ -68,7 +72,7 @@ static class QuestRenderer
             ? $"""★ {Short(repo.Stars)}   <tspan fill="{Green}">my PRs {repo.MyPullRequests} · {repo.MyMerged} merged</tspan>"""
             : $"★ {Short(repo.Stars)}   forks {Short(repo.Forks)}   played {Ago(days)}";
         sb.Append($"""<text class="lbl" x="{x}" y="{fy}" fill="{Dim}">{stats}</text>""");
-        sb.Append($"""<text class="lbl pulse" x="{bx + bw - 16}" y="{fy}" fill="{Green}" text-anchor="end" filter="url(#glow)">OPEN &gt;&gt;</text>""");
+        sb.Append($"""<text class="lbl" x="{bx + bw - 16}" y="{fy}" fill="{Green}" text-anchor="end" filter="url(#glow)">OPEN &gt;&gt;</text>""");
 
         sb.Append(Close(W, H));
         return sb.ToString();

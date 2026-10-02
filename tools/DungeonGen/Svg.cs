@@ -36,6 +36,16 @@ static class Svg
         return s + "</g>\n";
     }
 
+    /// Section divider: "[ 02 ] INVENTORY ────────── ◆" across the console, gives every section a clear start.
+    public static string Section(int w, int y, int num, string title)
+    {
+        int tx = 40, tw = (title.Length + 7) * 8 + 16;
+        return $"""<g pointer-events="none"><line x1="{tx + tw + 8}" y1="{y - 4}" x2="{w - 52}" y2="{y - 4}" stroke="{Dim}" stroke-opacity=".55" stroke-dasharray="6 4"/>""" +
+               $"""<rect x="{w - 46}" y="{y - 9}" width="6" height="6" transform="rotate(45 {w - 43} {y - 6})" fill="{Green}" filter="url(#glow)"/>""" +
+               $"""<rect x="{tx}" y="{y - 15}" width="{tw}" height="22" rx="3" fill="{Panel}" stroke="{Dim}"/>""" +
+               $"""<text class="lbl" x="{tx + 10}" y="{y}" fill="{Green}" filter="url(#glow)">[ {num:00} ] <tspan fill="#eaffea">{Esc(title)}</tspan></text></g>""";
+    }
+
     public static string Trim(string s, int max) => s.Length <= max ? s : s[..(max - 1)] + "…";
 
     /// Word-wraps text to lines of at most `width` characters (monospace font).

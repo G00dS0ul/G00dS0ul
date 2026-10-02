@@ -10,7 +10,7 @@ static class AboutRenderer
     public static string Render(AboutConfig a)
     {
         var body = new StringBuilder();
-        int top = 48;
+        int top = 84;
 
         // --- Character sheet (left)
         int lx = 40, lw = 520;
@@ -24,16 +24,21 @@ static class AboutRenderer
         int rightH = 40 + effects.Sum(e => 18 + e.Lines.Count * 16 + 8) + 4;
 
         int panelH = Math.Max(leftH, rightH);
+        // spread the left column so it fills the same height as the effects panel (no dead space)
+        int extra = panelH - leftH;
+        int rowStep = 24 + Math.Min(10, extra / 2 / rows.Length), bioStep = 18 + Math.Min(4, extra / 4 / Math.Max(1, bio.Count));
+        int bioTop = top + 48 + rows.Length * rowStep + 6;
+        bioTop += Math.Max(0, (top + panelH - 20) - (bioTop + (bio.Count - 1) * bioStep)) / 2;
         body.Append(PanelBox(lx, top, lw, panelH, "CHARACTER SHEET"));
         for (int i = 0; i < rows.Length; i++)
         {
-            int y = top + 48 + i * 24;
+            int y = top + 48 + i * rowStep;
             body.Append($"""<text class="lbl" x="{lx + 14}" y="{y}" fill="{Label}">{rows[i].K}</text>""");
             body.Append($"""<text class="sm" x="{lx + 110}" y="{y}" fill="{Green}"{(i < 2 ? " filter=\"url(#glow)\"" : "")}>{Esc(Trim(rows[i].V, 50))}</text>""");
         }
-        int by = top + 48 + rows.Length * 24 + 6;
+        body.Append($"""<line x1="{lx + 14}" y1="{bioTop - 20}" x2="{lx + lw - 14}" y2="{bioTop - 20}" stroke="{Dim}" stroke-opacity=".35"/>""");
         for (int i = 0; i < bio.Count; i++)
-            body.Append($"""<text class="sm" x="{lx + 14}" y="{by + i * 18}" fill="{Dim}">{Esc(bio[i])}</text>""");
+            body.Append($"""<text class="sm" x="{lx + 14}" y="{bioTop + i * bioStep}" fill="{Dim}">{Esc(bio[i])}</text>""");
 
         body.Append(PanelBox(rx, top, rw, panelH, "ACTIVE EFFECTS"));
         int ey = top + 46;
@@ -57,15 +62,18 @@ static class AboutRenderer
         body.Append(chips);
 
         // --- Lead-in to the link buttons below
-        int ly = gy + gearH + 30;
+        int need = gy + gearH + 96;
+        int h = (need + 39) / 40 * 40;              // round up to the 40px grid so slices line up
+        int ly = h - 18 - (h - need) / 2;           // split the rounding slack above/below the prompt
+        body.Append(Section(W, ly - 38, 5, "PARTY"));
         body.Append($"""<text class="ui" x="40" y="{ly}" fill="{Green}" filter="url(#glow)">&gt; ./connect --party</text>""");
         body.Append($"""<text class="lbl" x="{W - 40}" y="{ly}" fill="{Dim}" text-anchor="end">pick a channel</text>""");
 
-        int h = (ly + 16 + 39) / 40 * 40;   // round up to the 40px grid so slices line up
         var sb = new StringBuilder(Open(W, h));
         sb.Append(Frame(W, h));
-        sb.Append($"""<text class="ui" x="40" y="30" fill="{Green}" filter="url(#glow)">&gt; cat character.txt</text>""");
-        sb.Append($"""<text class="lbl" x="{W - 40}" y="30" fill="{Dim}" text-anchor="end">PLAYER 1 · {Esc(a.Handle.ToUpperInvariant())}</text>""");
+        sb.Append(Section(W, 28, 4, "CHARACTER"));
+        sb.Append($"""<text class="ui" x="40" y="66" fill="{Green}" filter="url(#glow)">&gt; cat character.txt</text>""");
+        sb.Append($"""<text class="lbl" x="{W - 40}" y="66" fill="{Dim}" text-anchor="end">PLAYER 1 · {Esc(a.Handle.ToUpperInvariant())}</text>""");
         sb.Append(body);
         sb.Append(Close(W, h));
         return sb.ToString();

@@ -5,17 +5,18 @@ using static Svg;
 // "Backpack" of languages (by bytes of code) + a character sheet of stats.
 static class InventoryRenderer
 {
-    const int W = 960, H = 320;
+    const int W = 960, H = 400;
 
     public static string Render(Profile p)
     {
         var sb = new StringBuilder(Open(W, H));
         sb.Append(Frame(W, H));
-        sb.Append($"""<text class="ui" x="40" y="30" fill="{Green}" filter="url(#glow)">&gt; ./inventory --open</text>""");
-        sb.Append($"""<text class="lbl" x="{W - 40}" y="30" fill="{Dim}" text-anchor="end">ADVENTURER SINCE {p.CreatedAt:yyyy}</text>""");
+        sb.Append(Section(W, 26, 2, "INVENTORY"));
+        sb.Append($"""<text class="ui" x="40" y="64" fill="{Green}" filter="url(#glow)">&gt; ./inventory --open</text>""");
+        sb.Append($"""<text class="lbl" x="{W - 40}" y="64" fill="{Dim}" text-anchor="end">ADVENTURER SINCE {p.CreatedAt:yyyy}</text>""");
 
         // --- Backpack (left)
-        int lx = 40, lw = 540, top = 48;
+        int lx = 40, lw = 540, top = 82;
         sb.Append($"""<rect x="{lx}" y="{top}" width="{lw}" height="226" rx="4" fill="{Panel}" stroke="{Dim}" stroke-opacity=".7"/>""");
         sb.Append($"""<text class="lbl" x="{lx + 14}" y="{top + 22}" fill="{Label}">BACKPACK · {(p.LanguagesByCommits ? "languages by my commits this year" : "languages by code written")}</text>""");
 
@@ -65,9 +66,10 @@ static class InventoryRenderer
         }
 
         // --- Lead-in to the quest cards below
-        sb.Append($"""<text class="ui" x="40" y="304" fill="{Green}" filter="url(#glow)">&gt; ./quests --pinned</text>""");
-        sb.Append($"""<text class="lbl" x="{W - 44}" y="304" fill="{Dim}" text-anchor="end">click a quest to open it</text>""");
-        sb.Append($"""<path class="blink" d="M{W - 34} 297 h10 l-5 7z" fill="{Green}"/>""");
+        sb.Append(Section(W, 346, 3, "QUEST LOG"));
+        sb.Append($"""<text class="ui" x="40" y="384" fill="{Green}" filter="url(#glow)">&gt; ./quests --pinned</text>""");
+        sb.Append($"""<text class="lbl" x="{W - 44}" y="384" fill="{Dim}" text-anchor="end">click a quest to open it</text>""");
+        sb.Append($"""<path class="blink" d="M{W - 34} 377 h10 l-5 7z" fill="{Green}"/>""");
 
         sb.Append(Close(W, H));
         return sb.ToString();
