@@ -9,7 +9,7 @@ record Profile(
     List<List<Day?>> Weeks, int Total,
     int Stars, int Repos, int Followers,
     int PullRequests, int Issues, int ContributedTo, DateTime CreatedAt,
-    List<Language> Languages, List<Repo> Pinned)
+    List<Language> Languages, bool LanguagesByCommits, List<Repo> Pinned)
 {
     public IEnumerable<Day> AllDays => Weeks.SelectMany(w => w).OfType<Day>().OrderBy(d => d.Date);
 }

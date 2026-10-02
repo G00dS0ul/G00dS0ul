@@ -52,7 +52,7 @@ static class QuestRenderer
             sb.Append($"""<text class="lbl" x="{x + 16}" y="{fy}" fill="{Green}">{Esc(repo.Language)}</text>""");
             x += 26 + repo.Language.Length * 8;
         }
-        sb.Append($"""<text class="lbl" x="{x}" y="{fy}" fill="{Dim}">★ {repo.Stars}   forks {repo.Forks}   last played {Ago(days)}</text>""");
+        sb.Append($"""<text class="lbl" x="{x}" y="{fy}" fill="{Dim}">★ {Short(repo.Stars)}   forks {Short(repo.Forks)}   played {Ago(days)}</text>""");
         sb.Append($"""<text class="lbl pulse" x="{bx + bw - 16}" y="{fy}" fill="{Green}" text-anchor="end" filter="url(#glow)">OPEN &gt;&gt;</text>""");
 
         sb.Append(Close(W, H));
@@ -86,6 +86,8 @@ static class QuestRenderer
         else if (lines.Count == maxLines && line.Length > 0) lines[^1] = InventoryRenderer.Trim(lines[^1] + " " + line, width);
         return lines.Select(l => InventoryRenderer.Trim(l, width)).ToList();
     }
+
+    static string Short(int n) => n >= 1000 ? $"{n / 1000.0:0.#}k".Replace(",", ".") : n.ToString();
 
     static string Ago(int days) => days switch
     {

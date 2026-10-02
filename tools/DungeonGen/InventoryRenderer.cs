@@ -17,7 +17,7 @@ static class InventoryRenderer
         // --- Backpack (left)
         int lx = 40, lw = 540, top = 48;
         sb.Append($"""<rect x="{lx}" y="{top}" width="{lw}" height="226" rx="4" fill="{Panel}" stroke="{Dim}" stroke-opacity=".7"/>""");
-        sb.Append($"""<text class="lbl" x="{lx + 14}" y="{top + 22}" fill="{Label}">BACKPACK · languages by code written</text>""");
+        sb.Append($"""<text class="lbl" x="{lx + 14}" y="{top + 22}" fill="{Label}">BACKPACK · {(p.LanguagesByCommits ? "languages by my commits this year" : "languages by code written")}</text>""");
 
         long totalBytes = Math.Max(1, p.Languages.Sum(l => l.Bytes));
         var items = p.Languages.Take(6).ToList();

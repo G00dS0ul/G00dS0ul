@@ -29,6 +29,10 @@ static class GitHub
           }
         }
         contributionsCollection {
+          commitContributionsByRepository(maxRepositories: 100) {
+            contributions { totalCount }
+            repository { nameWithOwner primaryLanguage { name color } }
+          }
           contributionCalendar {
             totalContributions
             weeks { contributionDays { date contributionCount weekday } }
@@ -87,13 +91,28 @@ static class GitHub
 
         // --- Repos, languages, pinned quests
         var repoNodes = u["repositories"]!["nodes"]!.AsArray().OfType<JsonNode>().ToList();
-        var languages = repoNodes
+        // Languages = what you actually commit in: every repo you pushed commits to this year
+        // (your own, org repos, open source like MetaCall), weighted by your commit count there,
+        // using that repo's main language. Falls back to code size in your own repos.
+        var byCommits = (u["contributionsCollection"]?["commitContributionsByRepository"]?.AsArray() ?? [])
+            .OfType<JsonNode>()
+            .Where(c => c["repository"]?["primaryLanguage"] is not null)
+            .GroupBy(c => (string)c["repository"]!["primaryLanguage"]!["name"]!)
+            .Select(g => new Language(g.Key, (string?)g.First()["repository"]!["primaryLanguage"]!["color"] ?? "#00FF00",
+                                      g.Sum(c => (long)c["contributions"]!["totalCount"]!)))
+            .OrderByDescending(l => l.Bytes)
+            .ToList();
+        var bySize = repoNodes
             .SelectMany(n => n["languages"]!["edges"]!.AsArray().OfType<JsonNode>())
             .GroupBy(e => (string)e["node"]!["name"]!)
             .Select(g => new Language(g.Key, (string?)g.First()["node"]!["color"] ?? "#00FF00",
                                       g.Sum(e => (long)e["size"]!)))
             .OrderByDescending(l => l.Bytes)
             .ToList();
+        bool useCommits = byCommits.Sum(l => l.Bytes) > 0;
+        var languages = useCommits ? byCommits : bySize;
+        Console.WriteLine($"Languages by {(useCommits ? "commits" : "code size")}: " +
+                          string.Join(", ", languages.Take(6).Select(l => $"{l.Name}={l.Bytes}")));
 
         var pinned = (u["pinnedItems"]?["nodes"]?.AsArray() ?? [])
             .OfType<JsonNode>()                       // blocked repos come back as null: skip them
@@ -110,6 +129,7 @@ static class GitHub
             ContributedTo: (int?)u["repositoriesContributedTo"]?["totalCount"] ?? 0,
             CreatedAt: DateTime.Parse((string)u["createdAt"]!, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal),
             Languages: languages,
+            LanguagesByCommits: useCommits,
             Pinned: pinned);
     }
 
