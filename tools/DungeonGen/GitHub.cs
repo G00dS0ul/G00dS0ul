@@ -1,0 +1,155 @@
+using System.Globalization;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
+
+static class GitHub
+{
+    const string Query = """
+    query($login: String!) {
+      user(login: $login) {
+        createdAt
+        followers { totalCount }
+        pullRequests { totalCount }
+        issues { totalCount }
+        repositoriesContributedTo(contributionTypes: [COMMIT, PULL_REQUEST, ISSUE, REPOSITORY]) { totalCount }
+        pinnedItems(first: 6, types: REPOSITORY) {
+          nodes { ... on Repository { ...RepoFields } }
+        }
+        repositories(ownerAffiliations: OWNER, isFork: false, privacy: PUBLIC, first: 100,
+                     orderBy: { field: PUSHED_AT, direction: DESC }) {
+          totalCount
+          nodes {
+            ...RepoFields
+            languages(first: 10, orderBy: { field: SIZE, direction: DESC }) {
+              edges { size node { name color } }
+            }
+          }
+        }
+        contributionsCollection {
+          contributionCalendar {
+            totalContributions
+            weeks { contributionDays { date contributionCount weekday } }
+          }
+        }
+      }
+    }
+    fragment RepoFields on Repository {
+      name nameWithOwner url description stargazerCount forkCount pushedAt
+      primaryLanguage { name color }
+    }
+    """;
+
+    public static async Task<Profile> FetchAsync(string login, string token)
+    {
+        using var http = new HttpClient();
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("G00dS0ul-ProfileGen");
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
+        var body = JsonSerializer.Serialize(new { query = Query, variables = new { login } });
+        var res = await http.PostAsync("https://api.github.com/graphql",
+            new StringContent(body, Encoding.UTF8, "application/json"));
+        res.EnsureSuccessStatusCode();
+        var json = JsonNode.Parse(await res.Content.ReadAsStringAsync())!;
+        if (json["errors"] is JsonArray errs)
+            throw new Exception("GraphQL error: " + string.Join("; ", errs.Select(e => e?["message"])));
+
+        var u = json["data"]!["user"]!;
+
+        // --- Contribution calendar (API version; replaced by the profile page version below)
+        var cal = u["contributionsCollection"]!["contributionCalendar"]!;
+        var weeks = new List<List<Day?>>();
+        foreach (var w in cal["weeks"]!.AsArray())
+        {
+            var col = new Day?[7];
+            foreach (var d in w!["contributionDays"]!.AsArray())
+                col[(int)d!["weekday"]!] = new Day(
+                    DateOnly.Parse((string)d["date"]!, CultureInfo.InvariantCulture),
+                    (int)d["contributionCount"]!);
+            weeks.Add(col.ToList());
+        }
+        int total = (int)cal["totalContributions"]!;
+
+        // The API only sees private contributions with a personal token. The profile page's own
+        // calendar already includes them (if "private contributions" is on), so prefer it.
+        try
+        {
+            var (pageWeeks, pageTotal) = await FetchProfileCalendarAsync(http, login);
+            Console.WriteLine($"Calendar source: profile page ({pageTotal}) vs API ({total}).");
+            if (pageTotal >= total) { weeks = pageWeeks; total = pageTotal; }
+        }
+        catch (Exception e) { Console.WriteLine($"Profile calendar unavailable, using API data: {e.Message}"); }
+
+        // --- Repos, languages, pinned quests
+        var repoNodes = u["repositories"]!["nodes"]!.AsArray().OfType<JsonNode>().ToList();
+        var languages = repoNodes
+            .SelectMany(n => n["languages"]!["edges"]!.AsArray().OfType<JsonNode>())
+            .GroupBy(e => (string)e["node"]!["name"]!)
+            .Select(g => new Language(g.Key, (string?)g.First()["node"]!["color"] ?? "#00FF00",
+                                      g.Sum(e => (long)e["size"]!)))
+            .OrderByDescending(l => l.Bytes)
+            .ToList();
+
+        var pinned = u["pinnedItems"]!["nodes"]!.AsArray().OfType<JsonNode>().Select(ToRepo).ToList();
+        if (pinned.Count == 0) pinned = repoNodes.Take(6).Select(ToRepo).ToList();   // nothing pinned: latest repos
+
+        return new Profile(weeks, total,
+            Stars: repoNodes.Sum(n => (int)n["stargazerCount"]!),
+            Repos: (int)u["repositories"]!["totalCount"]!,
+            Followers: (int)u["followers"]!["totalCount"]!,
+            PullRequests: (int)u["pullRequests"]!["totalCount"]!,
+            Issues: (int)u["issues"]!["totalCount"]!,
+            ContributedTo: (int)u["repositoriesContributedTo"]!["totalCount"]!,
+            CreatedAt: DateTime.Parse((string)u["createdAt"]!, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal),
+            Languages: languages,
+            Pinned: pinned);
+    }
+
+    static Repo ToRepo(JsonNode n) => new(
+        (string)n["name"]!, (string)n["nameWithOwner"]!, (string)n["url"]!, (string?)n["description"],
+        (string?)n["primaryLanguage"]?["name"], (string?)n["primaryLanguage"]?["color"],
+        (int)n["stargazerCount"]!, (int)n["forkCount"]!,
+        DateTime.Parse((string)n["pushedAt"]!, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal));
+
+    // Reads https://github.com/users/<login>/contributions — the exact graph shown on the profile.
+    static async Task<(List<List<Day?>> Weeks, int Total)> FetchProfileCalendarAsync(HttpClient http, string login)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, $"https://github.com/users/{login}/contributions");
+        req.Headers.Add("X-Requested-With", "XMLHttpRequest");
+        var res = await http.SendAsync(req);
+        res.EnsureSuccessStatusCode();
+        var html = await res.Content.ReadAsStringAsync();
+
+        var tips = new Dictionary<string, int>();
+        foreach (Match m in Regex.Matches(html, @"<tool-tip[^>]*\bfor=""([^""]+)""[^>]*>\s*(\d+|No) contribution"))
+            tips[m.Groups[1].Value] = m.Groups[2].Value == "No" ? 0 : int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture);
+
+        var days = new List<Day>();
+        foreach (Match m in Regex.Matches(html, @"<td\b[^>]*>"))
+        {
+            var tag = m.Value;
+            var date = Regex.Match(tag, @"data-date=""([\d-]+)""");
+            var id = Regex.Match(tag, @"\bid=""([^""]+)""");
+            if (!date.Success || !id.Success) continue;
+            days.Add(new Day(DateOnly.Parse(date.Groups[1].Value, CultureInfo.InvariantCulture),
+                             tips.GetValueOrDefault(id.Groups[1].Value)));
+        }
+        if (days.Count < 300) throw new Exception($"only parsed {days.Count} days");
+        days.Sort((a, b) => a.Date.CompareTo(b.Date));
+
+        var weeks = new List<List<Day?>>();
+        List<Day?>? week = null;
+        foreach (var d in days)
+        {
+            int wd = (int)d.Date.DayOfWeek;              // Sunday = 0, like GitHub's graph
+            if (week is null || wd == 0) { week = Enumerable.Repeat<Day?>(null, 7).ToList(); weeks.Add(week); }
+            week[wd] = d;
+        }
+
+        var header = Regex.Match(html, @"([\d,]+)\s+contributions?\s+in the last year");
+        int total = header.Success ? int.Parse(header.Groups[1].Value.Replace(",", ""), CultureInfo.InvariantCulture)
+                                   : days.Sum(d => d.Count);
+        return (weeks, total);
+    }
+}

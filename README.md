@@ -1,6 +1,12 @@
 <p align="center">
   <img src="./assets/header.svg" width="100%" align="top">
   <a href="https://g00ds0ul.github.io/G00dS0ul/"><img src="./assets/dungeon.svg" width="100%" align="top"></a>
+  <img src="./assets/inventory.svg" width="100%" align="top">
+<!-- QUESTS:START -->
+<a href="https://github.com/G00dS0ul/G00DS0ULRPG_Engine"><img src="./assets/quest-1.svg" width="50%" align="top" alt="G00DS0ULRPG_Engine"></a><a href="https://github.com/GS-SystemAnalyzer/core"><img src="./assets/quest-2.svg" width="50%" align="top" alt="core"></a>
+<a href="https://github.com/G00dS0ul/RogueGame-MonoGame"><img src="./assets/quest-3.svg" width="50%" align="top" alt="RogueGame-MonoGame"></a><a href="https://github.com/G00dS0ul/G00DS0ULCHECKERS"><img src="./assets/quest-4.svg" width="50%" align="top" alt="G00DS0ULCHECKERS"></a>
+<a href="https://github.com/G00dS0ul/Learning-Csharp"><img src="./assets/quest-5.svg" width="50%" align="top" alt="Learning-Csharp"></a><img src="./assets/quest-6.svg" width="50%" align="top" alt="Locked quest">
+<!-- QUESTS:END -->
   <img src="./assets/footer.svg" width="100%" align="top">
 </p>
 
@@ -18,21 +24,6 @@ I'm a software engineer, specializing in **C# and .NET Desktop Development**. I 
 - 💬 Ask me about **C# Logic, State Machines, and Console UI Systems**.
 - 📫 How to reach me: [LinkedIn](https://www.linkedin.com/in/iseoluwa-olowogoke-g00ds0ul)
 - ⚡ Fun fact: I am building complex financial software just to master the logic systems!
-
-### 📊 My GitHub Stats
-
-<div align="center">
-
-  [![GitHub Stats](https://github-readme-stats-lyart-zeta-33.vercel.app/api?username=G00dS0ul&show_icons=true&bg_color=000000&title_color=00FF00&text_color=00FF00&icon_color=00FF00&border_color=00FF00&custom_title=G00dS0ul's%20GitHub%20Stats&v=4)](https://github.com/G00dS0ul)
-
-[![GitHub Streak](https://github-readme-streak-stats-votl.vercel.app?user=G00dS0ul&theme=hacker&border_radius=10&short_numbers=true)](https://git.io/streak-stats)
-
-
-[![GitHub Activity Graph](https://github-readme-activity-graph.vercel.app/graph?username=G00dS0ul&bg_color=000000&color=00FF00&line=00FF00&point=00FF00&area_color=00FF00&area=true&custom_title=G00dS0ul%20Activity%20Graph&v=2)](https://github.com/G00dS0ul)
-
-  [![Top Langs](https://github-readme-stats-lyart-zeta-33.vercel.app/api/top-langs/?username=G00dS0ul&layout=compact&bg_color=000000&title_color=00FF00&text_color=00FF00&icon_color=00FF00&border_color=00FF00&v=1)](https://github.com/G00dS0ul)
-
-</div>
 
 ### 📫 Let's Connect
 I am highly adaptable, driven by underlying computer science algorithms, and currently seeking environments where I can ship real C# architecture.

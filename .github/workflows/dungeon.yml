@@ -1,4 +1,4 @@
-name: Update dungeon
+name: Update profile
 
 on:
   schedule:
@@ -18,13 +18,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
-      - name: Generate dungeon
-        run: dotnet run --project tools/DungeonGen -c Release -- ${{ github.repository_owner }} assets/dungeon.svg docs/index.html
+      - name: Generate profile
+        run: dotnet run --project tools/DungeonGen -c Release -- ${{ github.repository_owner }} --assets assets --html docs/index.html --readme README.md
         env:
           PROFILE_TOKEN: ${{ secrets.PROFILE_TOKEN || github.token }}
       - name: Commit if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/dungeon.svg docs/index.html
-          git diff --cached --quiet || (git commit -m "🗡️ Refresh dungeon" && git push)
+          git add assets docs README.md
+          git diff --cached --quiet || (git commit -m "🗡️ Refresh profile" && git push)
