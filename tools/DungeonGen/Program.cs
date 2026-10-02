@@ -183,7 +183,7 @@ class DungeonRenderer(Profile p)
         </style>
         <rect width="{{W}}" height="{{H}}" fill="#000"/>
         <rect x="12" width="{{W - 24}}" height="{{H}}" fill="url(#grid)"/>
-        <g class="flick" filter="url(#glow)">
+        <g class="flick" filter="url(#glow)" pointer-events="none">
           <line x1="14" y1="0" x2="14" y2="{{H}}" stroke="{{Green}}" stroke-width="3"/>
           <line x1="{{W - 14}}" y1="0" x2="{{W - 14}}" y2="{{H}}" stroke="{{Green}}" stroke-width="3"/>
         </g>
@@ -293,7 +293,7 @@ class DungeonRenderer(Profile p)
 
         sb.Append($"""
 
-        <rect width="{W}" height="{H}" fill="url(#scan)"/>
+        <rect width="{W}" height="{H}" fill="url(#scan)" pointer-events="none"/>
         </svg>
         """);
         return sb.ToString();
