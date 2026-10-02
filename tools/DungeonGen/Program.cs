@@ -7,6 +7,8 @@
 //   assets/dungeon.svg      contribution dungeon (README image)
 //   assets/inventory.svg    languages + character stats
 //   assets/quest-1..6.svg   one card per pinned repo
+//   assets/about.svg        character sheet, effects, gear (from about.json)
+//   assets/connect-N.svg    one link button per entry in about.json
 //   docs/index.html         interactive dungeon (GitHub Pages, hover any tile)
 //   README.md               refreshes the quest links between <!-- QUESTS:START/END -->
 //
@@ -21,6 +23,7 @@ string Opt(string name, string fallback)
 var assets = Opt("--assets", "assets");
 var htmlPath = Opt("--html", "docs/index.html");
 var readmePath = Opt("--readme", "README.md");
+var aboutPath = Opt("--about", "tools/DungeonGen/about.json");
 
 var token = Environment.GetEnvironmentVariable("PROFILE_TOKEN")
          ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN")
@@ -37,8 +40,21 @@ var quests = QuestRenderer.Slots(profile);
 for (int i = 0; i < quests.Count; i++)
     await Write(Path.Combine(assets, $"quest-{i + 1}.svg"), QuestRenderer.Render(quests[i], i, user));
 
+// About / gear / connect buttons come from about.json (plain text, edit it any time)
+var links = new List<LinkButton>();
+if (File.Exists(aboutPath))
+{
+    var about = System.Text.Json.JsonSerializer.Deserialize<AboutConfig>(await File.ReadAllTextAsync(aboutPath),
+        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+    await Write(Path.Combine(assets, "about.svg"), AboutRenderer.Render(about));
+    links = about.Links;
+    for (int i = 0; i < links.Count; i++)
+        await Write(Path.Combine(assets, $"connect-{i + 1}.svg"), ConnectRenderer.Render(links[i], i, links.Count));
+}
+else Console.WriteLine($"No {aboutPath}; skipping about/connect.");
+
 if (File.Exists(readmePath))
-    await ReadmeUpdater.UpdateQuestLinksAsync(readmePath, assets, quests);
+    await ReadmeUpdater.UpdateAsync(readmePath, assets, quests, links);
 
 Console.WriteLine($"Done: {profile.Total} XP, {profile.Languages.Count} languages, {profile.Pinned.Count} quests.");
 

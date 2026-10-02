@@ -36,6 +36,28 @@ static class Svg
         return s + "</g>\n";
     }
 
+    public static string Trim(string s, int max) => s.Length <= max ? s : s[..(max - 1)] + "…";
+
+    /// Word-wraps text to lines of at most `width` characters (monospace font).
+    public static List<string> Wrap(string text, int width, int maxLines = int.MaxValue)
+    {
+        var lines = new List<string>();
+        var line = "";
+        foreach (var word in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var next = line.Length == 0 ? word : line + " " + word;
+            if (next.Length > width && line.Length > 0) { lines.Add(line); line = word; }
+            else line = next;
+        }
+        if (line.Length > 0) lines.Add(line);
+        if (lines.Count > maxLines)
+        {
+            var rest = string.Join(" ", lines.Skip(maxLines - 1));
+            lines = lines.Take(maxLines - 1).Append(Trim(rest, width)).ToList();
+        }
+        return lines.Select(l => Trim(l, width)).ToList();
+    }
+
     public static string Close(int w, int h) =>
         $"""<rect width="{w}" height="{h}" fill="url(#scan)" pointer-events="none"/>""" + "\n</svg>\n";
 }

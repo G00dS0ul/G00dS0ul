@@ -73,5 +73,4 @@ static class InventoryRenderer
         return sb.ToString();
     }
 
-    internal static string Trim(string s, int max) => s.Length <= max ? s : s[..(max - 1)] + "…";
 }

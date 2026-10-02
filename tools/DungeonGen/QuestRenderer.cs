@@ -35,7 +35,7 @@ static class QuestRenderer
 
         // title: show "owner/name" for repos that belong to an org or someone else
         var title = repo.NameWithOwner.StartsWith(login + "/", StringComparison.OrdinalIgnoreCase) ? repo.Name : repo.NameWithOwner;
-        sb.Append($"""<text class="big" x="{bx + 16}" y="{by + 56}" fill="{Green}" filter="url(#glow)">{Esc(InventoryRenderer.Trim(title, 30))}</text>""");
+        sb.Append($"""<text class="big" x="{bx + 16}" y="{by + 56}" fill="{Green}" filter="url(#glow)">{Esc(Trim(title, 30))}</text>""");
 
         // description, wrapped to two lines
         var desc = string.IsNullOrWhiteSpace(repo.Description) ? "No quest log yet. Uncharted territory." : repo.Description!;
@@ -66,25 +66,6 @@ static class QuestRenderer
         sb.Append($"""<text class="sm" x="{cx}" y="{cy + 26}" fill="{Label}" text-anchor="middle">??? LOCKED QUEST — pin a repo to unlock</text>""");
         sb.Append(Close(W, H));
         return sb.ToString();
-    }
-
-    static List<string> Wrap(string text, int width, int maxLines)
-    {
-        var lines = new List<string>();
-        var line = "";
-        foreach (var word in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-        {
-            if ((line + " " + word).Trim().Length > width)
-            {
-                lines.Add(line);
-                line = word;
-                if (lines.Count == maxLines) break;
-            }
-            else line = (line + " " + word).Trim();
-        }
-        if (lines.Count < maxLines && line.Length > 0) lines.Add(line);
-        else if (lines.Count == maxLines && line.Length > 0) lines[^1] = InventoryRenderer.Trim(lines[^1] + " " + line, width);
-        return lines.Select(l => InventoryRenderer.Trim(l, width)).ToList();
     }
 
     static string Short(int n) => n >= 1000 ? $"{n / 1000.0:0.#}k".Replace(",", ".") : n.ToString();
