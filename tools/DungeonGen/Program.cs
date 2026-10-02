@@ -9,6 +9,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 var user = args.Length > 0 ? args[0] : "G00dS0ul";
 var output = args.Length > 1 ? args[1] : "assets/dungeon.svg";
@@ -82,8 +83,61 @@ static class GitHub
             weeks.Add(col.ToList());
         }
         var stars = u["repositories"]!["nodes"]!.AsArray().Sum(n => (int)n!["stargazerCount"]!);
-        return new Profile(weeks, (int)cal["totalContributions"]!, stars,
+        int total = (int)cal["totalContributions"]!;
+
+        // The API only sees private contributions with a personal token. The profile page's own
+        // calendar already includes them (if "private contributions" is on), so prefer it.
+        try
+        {
+            var (pageWeeks, pageTotal) = await FetchProfileCalendarAsync(http, login);
+            if (pageTotal >= total) { weeks = pageWeeks; total = pageTotal; }
+            Console.WriteLine($"Calendar source: profile page ({pageTotal}) vs API ({(int)cal["totalContributions"]!}).");
+        }
+        catch (Exception e) { Console.WriteLine($"Profile calendar unavailable, using API data: {e.Message}"); }
+
+        return new Profile(weeks, total, stars,
             (int)u["repositories"]!["totalCount"]!, (int)u["followers"]!["totalCount"]!);
+    }
+
+    // Reads https://github.com/users/<login>/contributions — the exact graph shown on the profile.
+    static async Task<(List<List<Day?>> Weeks, int Total)> FetchProfileCalendarAsync(HttpClient http, string login)
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Get, $"https://github.com/users/{login}/contributions");
+        req.Headers.Add("X-Requested-With", "XMLHttpRequest");
+        var res = await http.SendAsync(req);
+        res.EnsureSuccessStatusCode();
+        var html = await res.Content.ReadAsStringAsync();
+
+        var tips = new Dictionary<string, int>();
+        foreach (Match m in Regex.Matches(html, @"<tool-tip[^>]*\bfor=""([^""]+)""[^>]*>\s*(\d+|No) contribution"))
+            tips[m.Groups[1].Value] = m.Groups[2].Value == "No" ? 0 : int.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture);
+
+        var days = new List<Day>();
+        foreach (Match m in Regex.Matches(html, @"<td\b[^>]*>"))
+        {
+            var tag = m.Value;
+            var date = Regex.Match(tag, @"data-date=""([\d-]+)""");
+            var id = Regex.Match(tag, @"\bid=""([^""]+)""");
+            if (!date.Success || !id.Success) continue;
+            days.Add(new Day(DateOnly.Parse(date.Groups[1].Value, CultureInfo.InvariantCulture),
+                             tips.GetValueOrDefault(id.Groups[1].Value)));
+        }
+        if (days.Count < 300) throw new Exception($"only parsed {days.Count} days");
+        days.Sort((a, b) => a.Date.CompareTo(b.Date));
+
+        var weeks = new List<List<Day?>>();
+        List<Day?>? week = null;
+        foreach (var d in days)
+        {
+            int wd = (int)d.Date.DayOfWeek;              // Sunday = 0, like GitHub's graph
+            if (week is null || wd == 0) { week = Enumerable.Repeat<Day?>(null, 7).ToList(); weeks.Add(week); }
+            week[wd] = d;
+        }
+
+        var header = Regex.Match(html, @"([\d,]+)\s+contributions?\s+in the last year");
+        int total = header.Success ? int.Parse(header.Groups[1].Value.Replace(",", ""), CultureInfo.InvariantCulture)
+                                   : days.Sum(d => d.Count);
+        return (weeks, total);
     }
 }
 
@@ -134,8 +188,8 @@ class DungeonRenderer(Profile p)
           <line x1="{{W - 14}}" y1="0" x2="{{W - 14}}" y2="{{H}}" stroke="{{Green}}" stroke-width="3"/>
         </g>
         <text class="ui" x="40" y="30" fill="{{Green}}" filter="url(#glow)">&gt; ./explore --dungeon "my last 365 days"</text>
-        <text class="small" x="40" y="50" fill="{{Label}}">Every tile is one day. Dark stone = no commits. Brighter floor = more commits. Gold frame = my best day.</text>
-        <text class="lbl" x="{{W - 40}}" y="30" fill="{{Green}}" text-anchor="end" filter="url(#glow)">{{(interactive ? "[ hover any tile ]" : "[ click to explore ▶ ]")}}</text>
+        <text class="small" x="40" y="50" fill="{{Label}}">1 tile = 1 day  ·  dark stone = no commits  ·  brighter = more  ·  gold = best day</text>
+        {{(interactive ? HoverHint() : ExploreButton())}}
 
         """);
 
@@ -244,6 +298,32 @@ class DungeonRenderer(Profile p)
         """);
         return sb.ToString();
     }
+
+    // Pulsing, glowing "click to explore" button with a light sweep and a nudging arrow.
+    static string ExploreButton()
+    {
+        const int bw = 230, bh = 32, bx = W - 40 - bw, by = 10;
+        return $$"""
+        <g>
+          <clipPath id="btnClip"><rect x="{{bx}}" y="{{by}}" width="{{bw}}" height="{{bh}}" rx="6"/></clipPath>
+          <linearGradient id="shine" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+          <filter id="btnGlow" x="-40%" y="-120%" width="180%" height="340%"><feGaussianBlur stdDeviation="7"/></filter>
+          <rect class="pulse" x="{{bx}}" y="{{by}}" width="{{bw}}" height="{{bh}}" rx="6" fill="{{Green}}" filter="url(#btnGlow)"/>
+          <rect x="{{bx}}" y="{{by}}" width="{{bw}}" height="{{bh}}" rx="6" fill="#003b0f" stroke="{{Green}}" stroke-width="2"/>
+          <g clip-path="url(#btnClip)"><rect class="sweep" x="{{bx - 80}}" y="{{by}}" width="70" height="{{bh}}" fill="url(#shine)" transform="skewX(-20)"/></g>
+          <text x="{{bx + 18}}" y="{{by + 21}}" fill="#eaffea" style="font-size:15px;letter-spacing:1px" filter="url(#glow)">CLICK TO EXPLORE</text>
+          <g class="nudge"><path d="M{{bx + bw - 34}} {{by + 9}} l9 7 -9 7z M{{bx + bw - 24}} {{by + 9}} l9 7 -9 7z" fill="{{Green}}" filter="url(#glow)"/></g>
+        </g>
+        <style>
+          .pulse{animation:pulse 1.6s ease-in-out infinite} @keyframes pulse{0%,100%{opacity:.25}50%{opacity:.85} }
+          .sweep{animation:sweep 2.8s ease-in-out infinite} @keyframes sweep{0%{transform:skewX(-20deg) translateX(0)}60%,100%{transform:skewX(-20deg) translateX(340px)} }
+          .nudge{animation:nudge 0.9s ease-in-out infinite} @keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)} }
+        </style>
+        """;
+    }
+
+    static string HoverHint() =>
+        $"""<text class="lbl" x="{W - 40}" y="30" fill="{Green}" text-anchor="end" filter="url(#glow)">[ hover any tile ]</text>""";
 
     static string Tooltip(Day d)
     {
