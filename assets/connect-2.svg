@@ -14,11 +14,11 @@
 <rect width="240" height="80" fill="#000"/>
 <rect x="0" width="240" height="80" fill="url(#grid)"/><g class="flick" filter="url(#glow)" pointer-events="none"></g>
 <filter id="bg" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="6"/></filter>
-<rect class="pulse" style="animation-delay:0.4s" x="10" y="14" width="220" height="44" rx="6" fill="#00FF00" fill-opacity=".45" filter="url(#bg)"/>
-<rect x="10" y="14" width="220" height="44" rx="6" fill="#002a0b" stroke="#00FF00" stroke-width="2"/>
-<rect x="22" y="24" width="26" height="24" rx="3" fill="#000" stroke="#00FF00"/>
-<rect x="22" y="44" width="26" height="4" fill="#00FF00" fill-opacity=".5"/>
-<text class="sm" x="35" y="41" fill="#00FF00" text-anchor="middle" filter="url(#glow)">L</text>
-<text class="sm" x="60" y="41" fill="#eaffea" filter="url(#glow)">LINKEDIN</text>
+<rect class="pulse" style="animation-delay:0.4s" x="32" y="14" width="184" height="44" rx="6" fill="#00FF00" fill-opacity=".45" filter="url(#bg)"/>
+<rect x="32" y="14" width="184" height="44" rx="6" fill="#002a0b" stroke="#00FF00" stroke-width="2"/>
+<rect x="44" y="24" width="26" height="24" rx="3" fill="#000" stroke="#00FF00"/>
+<rect x="44" y="44" width="26" height="4" fill="#00FF00" fill-opacity=".5"/>
+<text class="sm" x="57" y="41" fill="#00FF00" text-anchor="middle" filter="url(#glow)">L</text>
+<text class="sm" x="82" y="41" fill="#eaffea" filter="url(#glow)">LINKEDIN</text>
 <rect width="240" height="80" fill="url(#scan)" pointer-events="none"/>
 </svg>

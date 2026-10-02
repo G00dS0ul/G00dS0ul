@@ -14,8 +14,8 @@
 <rect width="240" height="80" fill="#000"/>
 <rect x="12" width="228" height="80" fill="url(#grid)"/><g class="flick" filter="url(#glow)" pointer-events="none"><rect x="12.5" y="0" width="3" height="80" fill="#00FF00"/></g>
 <filter id="bg" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="6"/></filter>
-<rect class="pulse" style="animation-delay:0.0s" x="40" y="14" width="190" height="44" rx="6" fill="#00FF00" fill-opacity=".45" filter="url(#bg)"/>
-<rect x="40" y="14" width="190" height="44" rx="6" fill="#002a0b" stroke="#00FF00" stroke-width="2"/>
+<rect class="pulse" style="animation-delay:0.0s" x="40" y="14" width="184" height="44" rx="6" fill="#00FF00" fill-opacity=".45" filter="url(#bg)"/>
+<rect x="40" y="14" width="184" height="44" rx="6" fill="#002a0b" stroke="#00FF00" stroke-width="2"/>
 <rect x="52" y="24" width="26" height="24" rx="3" fill="#000" stroke="#00FF00"/>
 <rect x="52" y="44" width="26" height="4" fill="#00FF00" fill-opacity=".5"/>
 <text class="sm" x="65" y="41" fill="#00FF00" text-anchor="middle" filter="url(#glow)">E</text>
