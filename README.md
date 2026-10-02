@@ -1,4 +1,7 @@
-# 🦅 Hi there,
+<p align="center">
+  <img src="./assets/header.svg" width="100%" align="top">
+  <img src="./assets/footer.svg" width="100%" align="top">
+</p>
 
 **Computer Engineering Student | Game Engine Developer & Systems Architect**
 
