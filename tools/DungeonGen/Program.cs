@@ -36,27 +36,33 @@ await Write(Path.Combine(assets, "dungeon.svg"), dungeon.Render(interactive: fal
 await Write(htmlPath, HtmlPage.Build(user, dungeon.Render(interactive: true)));
 await Write(Path.Combine(assets, "inventory.svg"), InventoryRenderer.Render(profile));
 
-var quests = QuestRenderer.Slots(profile);
-for (int i = 0; i < quests.Count; i++)
-    await Write(Path.Combine(assets, $"quest-{i + 1}.svg"), QuestRenderer.Render(quests[i], i, user));
-
-// About / gear / connect buttons come from about.json (plain text, edit it any time)
-var links = new List<LinkButton>();
+// About / gear / connect buttons / roles come from about.json (plain text, edit it any time)
+AboutConfig? about = null;
 if (File.Exists(aboutPath))
-{
-    var about = System.Text.Json.JsonSerializer.Deserialize<AboutConfig>(await File.ReadAllTextAsync(aboutPath),
+    about = System.Text.Json.JsonSerializer.Deserialize<AboutConfig>(await File.ReadAllTextAsync(aboutPath),
         new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+else Console.WriteLine($"No {aboutPath}; skipping about/connect.");
+
+var links = about?.Links ?? [];
+if (about is not null)
+{
     await Write(Path.Combine(assets, "about.svg"), AboutRenderer.Render(about));
-    links = about.Links;
     for (int i = 0; i < links.Count; i++)
         await Write(Path.Combine(assets, $"connect-{i + 1}.svg"), ConnectRenderer.Render(links[i], i, links.Count));
 }
-else Console.WriteLine($"No {aboutPath}; skipping about/connect.");
+
+var quests = QuestRenderer.Slots(profile);
+for (int i = 0; i < quests.Count; i++)
+    await Write(Path.Combine(assets, $"quest-{i + 1}.svg"), QuestRenderer.Render(quests[i], i, user, RoleFor(quests[i])));
 
 if (File.Exists(readmePath))
     await ReadmeUpdater.UpdateAsync(readmePath, assets, quests, links);
 
 Console.WriteLine($"Done: {profile.Total} XP, {profile.Languages.Count} languages, {profile.Pinned.Count} quests.");
+
+string? RoleFor(Repo? r) =>
+    r is null || about?.Roles is null ? null
+    : about.Roles.FirstOrDefault(kv => kv.Key.Equals(r.NameWithOwner, StringComparison.OrdinalIgnoreCase)).Value;
 
 static async Task Write(string path, string content)
 {

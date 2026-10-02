@@ -12,7 +12,7 @@ static class QuestRenderer
     public static List<Repo?> Slots(Profile p) =>
         Enumerable.Range(0, Slots_).Select(i => i < p.Pinned.Count ? p.Pinned[i] : null).ToList();
 
-    public static string Render(Repo? repo, int index, string login)
+    public static string Render(Repo? repo, int index, string login, string? role = null)
     {
         bool left = index % 2 == 0;
         int bx = left ? 40 : 16, bw = W - 56, by = 10, bh = H - 24;
@@ -33,15 +33,27 @@ static class QuestRenderer
         if (pulse) sb.Append($"""<rect class="pulse" x="{sx}" y="{by + 10}" width="{sw}" height="20" rx="3" fill="{color}" fill-opacity=".18"/>""");
         sb.Append($"""<text class="lbl" x="{sx + sw / 2}" y="{by + 24}" fill="{color}" text-anchor="middle">{status}</text>""");
 
+        bool contributor = !repo.NameWithOwner.StartsWith(login + "/", StringComparison.OrdinalIgnoreCase);
+        if (contributor)
+        {
+            const string gold = "#ffd84d";
+            int cw = 11 * 8 + 20, cx = sx - 8 - cw;
+            sb.Append($"""<rect class="pulse" x="{cx}" y="{by + 10}" width="{cw}" height="20" rx="3" fill="{gold}" fill-opacity=".15"/>""");
+            sb.Append($"""<rect x="{cx}" y="{by + 10}" width="{cw}" height="20" rx="3" fill="none" stroke="{gold}"/>""");
+            sb.Append($"""<text class="lbl" x="{cx + cw / 2}" y="{by + 24}" fill="{gold}" text-anchor="middle" filter="url(#glow)">CONTRIBUTOR</text>""");
+        }
+
         // title: show "owner/name" for repos that belong to an org or someone else
         var title = repo.NameWithOwner.StartsWith(login + "/", StringComparison.OrdinalIgnoreCase) ? repo.Name : repo.NameWithOwner;
         sb.Append($"""<text class="big" x="{bx + 16}" y="{by + 56}" fill="{Green}" filter="url(#glow)">{Esc(Trim(title, 30))}</text>""");
 
         // description, wrapped to two lines
         var desc = string.IsNullOrWhiteSpace(repo.Description) ? "No quest log yet. Uncharted territory." : repo.Description!;
-        var lines = Wrap(desc, 50, 2);
+        var lines = Wrap(desc, 50, string.IsNullOrWhiteSpace(role) ? 2 : 1);
         for (int i = 0; i < lines.Count; i++)
             sb.Append($"""<text class="sm" x="{bx + 16}" y="{by + 80 + i * 17}" fill="{Dim}">{Esc(lines[i])}</text>""");
+        if (!string.IsNullOrWhiteSpace(role))
+            sb.Append($"""<text class="sm" x="{bx + 16}" y="{by + 97}" fill="#ffd84d"><tspan fill="{Label}">my role: </tspan>{Esc(Trim(role, 41))}</text>""");
 
         // footer: language · stars · forks · last played
         int fy = by + bh - 14;
@@ -52,7 +64,10 @@ static class QuestRenderer
             sb.Append($"""<text class="lbl" x="{x + 16}" y="{fy}" fill="{Green}">{Esc(repo.Language)}</text>""");
             x += 26 + repo.Language.Length * 8;
         }
-        sb.Append($"""<text class="lbl" x="{x}" y="{fy}" fill="{Dim}">★ {Short(repo.Stars)}   forks {Short(repo.Forks)}   played {Ago(days)}</text>""");
+        var stats = contributor && repo.MyPullRequests > 0
+            ? $"""★ {Short(repo.Stars)}   <tspan fill="{Green}">my PRs {repo.MyPullRequests} · {repo.MyMerged} merged</tspan>"""
+            : $"★ {Short(repo.Stars)}   forks {Short(repo.Forks)}   played {Ago(days)}";
+        sb.Append($"""<text class="lbl" x="{x}" y="{fy}" fill="{Dim}">{stats}</text>""");
         sb.Append($"""<text class="lbl pulse" x="{bx + bw - 16}" y="{fy}" fill="{Green}" text-anchor="end" filter="url(#glow)">OPEN &gt;&gt;</text>""");
 
         sb.Append(Close(W, H));

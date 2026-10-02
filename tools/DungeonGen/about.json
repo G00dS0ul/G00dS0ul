@@ -6,17 +6,68 @@
   "specialty": "C# & .NET Desktop Development",
   "bio": "I engineer complex, data-driven systems from scratch, from enterprise-level MVVM architectures to custom object-oriented game engines.",
   "effects": [
-    { "tag": "+", "label": "LEARNING", "text": "Advanced C# & Game Design Patterns" },
-    { "tag": "&", "label": "SEEKING PARTY", "text": "Open source C# projects & beginner game jams" },
-    { "tag": "?", "label": "ASK ME ABOUT", "text": "C# logic, state machines & console UI systems" },
-    { "tag": "!", "label": "FUN FACT", "text": "I build complex financial software just to master logic systems" }
+    {
+      "tag": "+",
+      "label": "LEARNING",
+      "text": "Advanced C# & Game Design Patterns"
+    },
+    {
+      "tag": "&",
+      "label": "SEEKING PARTY",
+      "text": "Open source C# projects & beginner game jams"
+    },
+    {
+      "tag": "?",
+      "label": "ASK ME ABOUT",
+      "text": "C# logic, state machines & console UI systems"
+    },
+    {
+      "tag": "!",
+      "label": "FUN FACT",
+      "text": "I build complex financial software just to master logic systems"
+    }
   ],
-  "gear": [ "C#", "Python (fundamentals)", ".NET 10", "WPF", "MonoGame", "Unity", "Visual Studio", "Git" ],
-  "skills": [ "System Architecture", "Strict OOP", "State Machines", "Decoupled Rendering", "Algorithmic Logic" ],
+  "gear": [
+    "C#",
+    "Python (fundamentals)",
+    ".NET 10",
+    "WPF",
+    "MonoGame",
+    "Unity",
+    "Visual Studio",
+    "Git"
+  ],
+  "skills": [
+    "System Architecture",
+    "Strict OOP",
+    "State Machines",
+    "Decoupled Rendering",
+    "Algorithmic Logic"
+  ],
   "links": [
-    { "key": "E", "label": "EMAIL", "url": "mailto:olowogokeiseoluwa23@gmail.com" },
-    { "key": "L", "label": "LINKEDIN", "url": "https://www.linkedin.com/in/iseoluwa-olowogoke-g00ds0ul/" },
-    { "key": "X", "label": "X / TWITTER", "url": "https://x.com/IsEverythinGoo" },
-    { "key": "D", "label": "DUNGEON", "url": "https://g00ds0ul.github.io/G00dS0ul/" }
-  ]
+    {
+      "key": "E",
+      "label": "EMAIL",
+      "url": "mailto:olowogokeiseoluwa23@gmail.com"
+    },
+    {
+      "key": "L",
+      "label": "LINKEDIN",
+      "url": "https://www.linkedin.com/in/iseoluwa-olowogoke-g00ds0ul/"
+    },
+    {
+      "key": "X",
+      "label": "X / TWITTER",
+      "url": "https://x.com/IsEverythinGoo"
+    },
+    {
+      "key": "D",
+      "label": "DUNGEON",
+      "url": "https://g00ds0ul.github.io/G00dS0ul/"
+    }
+  ],
+  "roles": {
+    "metacall/core": "C# loader: classes & cs_loader fixes",
+    "GS-SystemAnalyzer/core": "core dev: .NET(C#) & Flutter(Dart)"
+  }
 }

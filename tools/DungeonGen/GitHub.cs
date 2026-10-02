@@ -51,11 +51,7 @@ static class GitHub
         using var http = new HttpClient();
         http.DefaultRequestHeaders.UserAgent.ParseAdd("G00dS0ul-ProfileGen");
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", token);
-        var body = JsonSerializer.Serialize(new { query = Query, variables = new { login } });
-        var res = await http.PostAsync("https://api.github.com/graphql",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-        res.EnsureSuccessStatusCode();
-        var json = JsonNode.Parse(await res.Content.ReadAsStringAsync())!;
+        var json = await PostGraphQLAsync(http, Query, new { login });
         // GraphQL can return partial data: e.g. an organisation that blocks your token hides just
         // that one pinned repo. Keep going with whatever came back and only fail if the user is missing.
         if (json["errors"] is JsonArray errs)
@@ -119,6 +115,7 @@ static class GitHub
             .Where(n => n["name"] is not null)
             .Select(ToRepo).ToList();
         if (pinned.Count == 0) pinned = repoNodes.Take(6).Select(ToRepo).ToList();   // nothing pinned: latest repos
+        pinned = await AddMyPullRequestsAsync(http, login, pinned);
 
         return new Profile(weeks, total,
             Stars: repoNodes.Sum(n => (int)n["stargazerCount"]!),
@@ -131,6 +128,50 @@ static class GitHub
             Languages: languages,
             LanguagesByCommits: useCommits,
             Pinned: pinned);
+    }
+
+    static async Task<JsonNode> PostGraphQLAsync(HttpClient http, string query, object variables)
+    {
+        var body = JsonSerializer.Serialize(new { query, variables });
+        var res = await http.PostAsync("https://api.github.com/graphql",
+            new StringContent(body, Encoding.UTF8, "application/json"));
+        res.EnsureSuccessStatusCode();
+        return JsonNode.Parse(await res.Content.ReadAsStringAsync())!;
+    }
+
+    // For pinned repos you don't own (open source, org projects): count your PRs there, all-time.
+    // One request, using an aliased search per repo.
+    static async Task<List<Repo>> AddMyPullRequestsAsync(HttpClient http, string login, List<Repo> pinned)
+    {
+        var foreign = pinned.Select((r, i) => (r, i))
+            .Where(x => !x.r.NameWithOwner.StartsWith(login + "/", StringComparison.OrdinalIgnoreCase)).ToList();
+        if (foreign.Count == 0) return pinned;
+
+        var q = new StringBuilder("query {");
+        foreach (var (r, i) in foreign)
+            q.Append($$"""
+              all{{i}}: search(type: ISSUE, query: "repo:{{r.NameWithOwner}} author:{{login}} is:pr") { issueCount }
+              merged{{i}}: search(type: ISSUE, query: "repo:{{r.NameWithOwner}} author:{{login}} is:pr is:merged") { issueCount }
+            """);
+        q.Append('}');
+
+        try
+        {
+            var data = (await PostGraphQLAsync(http, q.ToString(), new { }))["data"];
+            var result = pinned.ToList();
+            foreach (var (r, i) in foreign)
+                result[i] = r with
+                {
+                    MyPullRequests = (int?)data?[$"all{i}"]?["issueCount"] ?? 0,
+                    MyMerged = (int?)data?[$"merged{i}"]?["issueCount"] ?? 0,
+                };
+            return result;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"::warning::Could not count your PRs on contributed repos: {e.Message}");
+            return pinned;
+        }
     }
 
     static Repo ToRepo(JsonNode n) => new(
