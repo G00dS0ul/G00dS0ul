@@ -5,7 +5,7 @@
 <!-- QUESTS:START -->
 <a href="https://github.com/G00dS0ul/G00DS0ULRPG_Engine"><img src="./assets/quest-1.svg" width="50%" align="top" alt="G00DS0ULRPG_Engine"></a><a href="https://github.com/GS-SystemAnalyzer/core"><img src="./assets/quest-2.svg" width="50%" align="top" alt="core"></a>
 <a href="https://github.com/G00dS0ul/RogueGame-MonoGame"><img src="./assets/quest-3.svg" width="50%" align="top" alt="RogueGame-MonoGame"></a><a href="https://github.com/G00dS0ul/G00DS0ULCHECKERS"><img src="./assets/quest-4.svg" width="50%" align="top" alt="G00DS0ULCHECKERS"></a>
-<a href="https://github.com/G00dS0ul/Learning-Csharp"><img src="./assets/quest-5.svg" width="50%" align="top" alt="Learning-Csharp"></a><img src="./assets/quest-6.svg" width="50%" align="top" alt="Locked quest">
+<a href="https://github.com/G00dS0ul/Learning-Csharp"><img src="./assets/quest-5.svg" width="50%" align="top" alt="Learning-Csharp"></a><a href="https://github.com/metacall/core"><img src="./assets/quest-6.svg" width="50%" align="top" alt="core"></a>
 <!-- QUESTS:END -->
   <img src="./assets/footer.svg" width="100%" align="top">
 </p>
