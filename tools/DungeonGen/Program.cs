@@ -79,44 +79,41 @@ static class GitHub
 }
 
 // ---------------- Rendering ----------------
+// Each day is one tile, laid out like GitHub's contribution graph:
+//   no commits  -> dark stone wall
+//   commits     -> lit floor tile (brighter = more commits), busiest days hold treasure
+//   '@' sprite  -> you, walking your current streak
 class DungeonRenderer(Profile p)
 {
-    const int W = 960, H = 360;           // slice height is a multiple of 40 so the grid lines up
-    const int TileW = 16, TileH = 22;
-    const string Green = "#00FF00", Dim = "#00a83a", Wall = "#0f4d1a";
-
-    // Tile glyph + colour per activity level (0 = wall)
-    static readonly (string Glyph, string Color)[] Tiles =
-    [
-        ("#", Wall),        // 0 contributions: solid rock
-        (".", Dim),         // level 1: floor
-        ("+", Green),       // level 2: corridor / door
-        ("$", "#ffd84d"),   // level 3: gold
-        ("!", "#ff4d9d"),   // level 4: potion (your busiest days)
-    ];
+    const int W = 960, H = 320;           // multiple of 40 so the console grid lines up
+    const int Cell = 16, Tile = 14;
+    const int GridX = 76, GridY = 76;
+    const string Green = "#00FF00", Dim = "#00a83a", Label = "#2f8f45";
+    static readonly string[] FloorColors = ["#0e5a22", "#16912f", "#22cc46", "#7dff8f"];
+    static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
     public string Render()
     {
         var days = p.AllDays.ToList();
         int max = Math.Max(1, days.Count == 0 ? 1 : days.Max(d => d.Count));
         var (current, best, streakDays) = Streaks(days);
-
-        int cols = p.Weeks.Count + 2, rows = 7 + 2;  // +2 = outer wall border
-        double mapX = (W - cols * TileW) / 2.0, mapY = 56;
         var sb = new StringBuilder();
 
         sb.Append($$"""
         <svg xmlns="http://www.w3.org/2000/svg" width="{{W}}" height="{{H}}" viewBox="0 0 {{W}} {{H}}">
         <defs>
-          <filter id="glow" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
           <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="{{Green}}" stroke-opacity=".07"/></pattern>
-          <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="2" fill="#000" fill-opacity=".35"/></pattern>
+          <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="2" fill="#000" fill-opacity=".3"/></pattern>
+          <g id="wall"><rect width="{{Tile}}" height="{{Tile}}" fill="#0a1f0f"/><rect width="{{Tile}}" height="2" fill="#163a1e"/><rect y="7" width="{{Tile}}" height="1" fill="#050f07"/><rect x="6" y="2" width="1" height="5" fill="#050f07"/><rect x="3" y="8" width="1" height="6" fill="#050f07"/><rect x="10" y="8" width="1" height="6" fill="#050f07"/></g>
+          <g id="chest"><rect x="3" y="5" width="8" height="6" fill="#c98a1b"/><rect x="3" y="5" width="8" height="2" fill="#ffd84d"/><rect x="6" y="7" width="2" height="2" fill="#3a2500"/></g>
+          <g id="hero"><rect x="5" y="1" width="4" height="4" fill="#fff"/><rect x="3" y="6" width="8" height="2" fill="#fff"/><rect x="6" y="5" width="2" height="5" fill="#fff"/><rect x="4" y="10" width="2" height="3" fill="#fff"/><rect x="8" y="10" width="2" height="3" fill="#fff"/><rect x="11" y="3" width="1" height="6" fill="#9ff"/></g>
         </defs>
         <style>
-          text{font-family:"Courier New",Consolas,"DejaVu Sans Mono",monospace;font-weight:700}
-          .t{font-size:18px;text-anchor:middle}
-          .ui{font-size:15px;white-space:pre}
-          .blink{animation:b 1s step-end infinite} @keyframes b{50%{opacity:.25} }
+          text{font-family:"Courier New",Consolas,"DejaVu Sans Mono",monospace;font-weight:700;white-space:pre}
+          .ui{font-size:15px} .lbl{font-size:12px} .big{font-size:22px} .small{font-size:12px}
+          .torch{animation:t 1.3s infinite} @keyframes t{0%,100%{opacity:1}40%{opacity:.55}70%{opacity:.85} }
+          .bob{animation:bob .8s steps(2) infinite} @keyframes bob{50%{transform:translateY(-1px)} }
           .flick{animation:f 7s infinite} @keyframes f{0%,95%,100%{opacity:1}96%{opacity:.6}97%{opacity:1} }
         </style>
         <rect width="{{W}}" height="{{H}}" fill="#000"/>
@@ -125,46 +122,89 @@ class DungeonRenderer(Profile p)
           <line x1="14" y1="0" x2="14" y2="{{H}}" stroke="{{Green}}" stroke-width="3"/>
           <line x1="{{W - 14}}" y1="0" x2="{{W - 14}}" y2="{{H}}" stroke="{{Green}}" stroke-width="3"/>
         </g>
-        <text class="ui" x="40" y="34" fill="{{Green}}" filter="url(#glow)">&gt; ./explore --dungeon contributions --depth 365</text>
+        <text class="ui" x="40" y="30" fill="{{Green}}" filter="url(#glow)">&gt; ./explore --dungeon "my last 365 days"</text>
+        <text class="small" x="40" y="50" fill="{{Label}}">Every tile is one day. Dark stone = no commits. Lit floor = I was coding. Treasure = my biggest days.</text>
 
         """);
 
-        // Map tiles
-        for (int c = 0; c < cols; c++)
-        for (int r = 0; r < rows; r++)
+        // Month labels + weekday labels
+        string? lastMonth = null;
+        for (int c = 0; c < p.Weeks.Count; c++)
         {
-            double x = mapX + c * TileW + TileW / 2.0, y = mapY + r * TileH + 16;
-            bool border = c == 0 || r == 0 || c == cols - 1 || r == rows - 1;
-            if (border) { sb.Append(Glyph(x, y, "#", Wall)); continue; }
-            var day = p.Weeks[c - 1][r - 1];
-            if (day is null) continue;                       // days that haven't happened yet
-            var (g, col) = Tiles[Level(day.Count, max)];
-            sb.Append(Glyph(x, y, g, col, Level(day.Count, max) >= 3));
+            var first = p.Weeks[c].OfType<Day>().FirstOrDefault();
+            if (first is null) continue;
+            var m = first.Date.ToString("MMM", Inv);
+            if (m != lastMonth && first.Date.Day <= 7 && c < p.Weeks.Count - 2)
+                sb.Append($"""<text class="lbl" x="{GridX + c * Cell}" y="{GridY - 6}" fill="{Label}">{m}</text>""");
+            lastMonth = m;
         }
+        foreach (var (row, name) in new[] { (1, "Mon"), (3, "Wed"), (5, "Fri") })
+            sb.Append($"""<text class="lbl" x="40" y="{GridY + row * Cell + 11}" fill="{Label}">{name}</text>""");
+        sb.Append('\n');
 
-        // The player '@' walks your current streak (or stands on your latest active day)
-        var path = streakDays.Count > 0 ? streakDays
-                 : days.Where(d => d.Count > 0).TakeLast(1).ToList();
+        // Tiles
+        var rng = new Random(1337); // seeded: same data -> same image -> no pointless commits
+        var torches = new List<(int X, int Y)>();
+        for (int c = 0; c < p.Weeks.Count; c++)
+        for (int r = 0; r < 7; r++)
+        {
+            var day = p.Weeks[c][r];
+            if (day is null) continue;
+            int x = GridX + c * Cell, y = GridY + r * Cell;
+            int lvl = Level(day.Count, max);
+            if (lvl == 0)
+            {
+                sb.Append($"""<use href="#wall" x="{x}" y="{y}"/>""");
+                if (NextToFloor(c, r, max) && rng.NextDouble() < 0.06) torches.Add((x, y));
+                continue;
+            }
+            var glow = lvl >= 3 ? " filter=\"url(#glow)\"" : "";
+            sb.Append($"""<rect x="{x}" y="{y}" width="{Tile}" height="{Tile}" fill="{FloorColors[lvl - 1]}"{glow}/>""");
+            if (lvl == 4) sb.Append($"""<use href="#chest" x="{x}" y="{y}"/>""");
+        }
+        foreach (var (x, y) in torches)
+            sb.Append($"""<g class="torch" filter="url(#glow)"><rect x="{x + 6}" y="{y + 6}" width="2" height="6" fill="#7a4a12"/><rect x="{x + 5}" y="{y + 2}" width="4" height="4" fill="#ffae2b"/></g>""");
+        sb.Append('\n');
+
+        // The hero walks the current streak (or stands on the latest active day)
+        var path = streakDays.Count > 0 ? streakDays : days.Where(d => d.Count > 0).TakeLast(1).ToList();
         if (path.Count > 0)
         {
-            var pts = path.Select(d => TilePos(d, mapX, mapY)).ToList();
+            var pts = path.Select(TilePos).ToList();
             var last = pts[^1];
-            sb.Append($"""<g filter="url(#glow)" transform="translate({last.X:0.#} {last.Y:0.#})">""");
-            sb.Append($"""<rect x="{-TileW / 2}" y="-16" width="{TileW}" height="{TileH}" fill="#000"/>""");
-            sb.Append("""<text class="t blink" x="0" y="0" fill="#ffffff">@</text>""");
+            sb.Append($"""<g filter="url(#glow)" transform="translate({last.X} {last.Y})"><rect width="{Tile}" height="{Tile}" fill="#000" fill-opacity=".55"/><g class="bob"><use href="#hero"/></g>""");
             if (pts.Count > 1)
             {
-                var values = string.Join(";", pts.Select(pt => $"{pt.X:0.#} {pt.Y:0.#}"));
-                sb.Append($"""<animateTransform attributeName="transform" type="translate" values="{values}" dur="{pts.Count * 0.5:0.#}s" calcMode="discrete" repeatCount="indefinite"/>""");
+                var values = string.Join(";", pts.Select(pt => $"{pt.X} {pt.Y}"));
+                sb.Append($"""<animateTransform attributeName="transform" type="translate" values="{values}" dur="{(pts.Count * 0.6).ToString("0.#", Inv)}s" calcMode="discrete" repeatCount="indefinite"/>""");
             }
             sb.Append("</g>\n");
         }
 
-        // Legend + HUD
-        double legendY = mapY + rows * TileH + 30;
+        // Legend (Less -> More, like GitHub)
+        int ly = GridY + 7 * Cell + 22;
+        sb.Append($"""<text class="lbl" x="{GridX}" y="{ly + 11}" fill="{Label}">no commits</text><use href="#wall" x="{GridX + 84}" y="{ly}"/>""");
+        sb.Append($"""<text class="lbl" x="{GridX + 116}" y="{ly + 11}" fill="{Label}">few</text>""");
+        for (int i = 0; i < 4; i++)
+            sb.Append($"""<rect x="{GridX + 146 + i * Cell}" y="{ly}" width="{Tile}" height="{Tile}" fill="{FloorColors[i]}"/>""");
+        sb.Append($"""<use href="#chest" x="{GridX + 146 + 3 * Cell}" y="{ly}"/><text class="lbl" x="{GridX + 220}" y="{ly + 11}" fill="{Label}">many (treasure)</text>""");
+        sb.Append($"""<use href="#hero" x="{GridX + 370}" y="{ly}"/><text class="lbl" x="{GridX + 390}" y="{ly + 11}" fill="{Label}">me, walking my current streak</text>""");
+        sb.Append('\n');
+
+        // Stat boxes
+        int by = ly + 34, bw = 280, gap = 20, bx = (W - (3 * bw + 2 * gap)) / 2;
+        string[] titles = ["XP · contributions", "STREAK · days in a row", "LOOT"];
+        string[] values2 = [$"{p.Total}", $"{current} (best {best})", $"★{p.Stars}  ·  {p.Repos} repos"];
+        for (int i = 0; i < 3; i++)
+        {
+            int x = bx + i * (bw + gap);
+            sb.Append($"""<rect x="{x}" y="{by}" width="{bw}" height="62" rx="4" fill="#001a06" stroke="{Dim}" stroke-opacity=".7"/>""");
+            sb.Append($"""<text class="lbl" x="{x + 14}" y="{by + 20}" fill="{Label}">{titles[i]}</text>""");
+            sb.Append($"""<text class="big" x="{x + 14}" y="{by + 48}" fill="{Green}" filter="url(#glow)">{values2[i]}</text>""");
+        }
+
         sb.Append($"""
-        <text class="ui" x="40" y="{legendY}" fill="{Dim}"><tspan fill="{Wall}">#</tspan> rock  <tspan fill="{Dim}">.</tspan> 1st commit  <tspan fill="{Green}">+</tspan> active  <tspan fill="#ffd84d">$</tspan> loot  <tspan fill="#ff4d9d">!</tspan> legendary day  <tspan fill="#fff">@</tspan> you</text>
-        <text class="ui" x="40" y="{legendY + 36}" fill="{Green}" filter="url(#glow)">XP {p.Total}  ·  STREAK {current}d (best {best}d)  ·  GOLD ★{p.Stars}  ·  QUESTS {p.Repos}  ·  PARTY {p.Followers}</text>
+
         <rect width="{W}" height="{H}" fill="url(#scan)"/>
         </svg>
         """);
@@ -174,12 +214,22 @@ class DungeonRenderer(Profile p)
     static int Level(int count, int max) => count == 0 ? 0
         : count <= max * 0.25 ? 1 : count <= max * 0.5 ? 2 : count <= max * 0.75 ? 3 : 4;
 
-    (double X, double Y) TilePos(Day d, double mapX, double mapY)
+    bool NextToFloor(int c, int r, int max)
+    {
+        foreach (var (dc, dr) in new[] { (1, 0), (-1, 0), (0, 1), (0, -1) })
+        {
+            int nc = c + dc, nr = r + dr;
+            if (nc < 0 || nr < 0 || nc >= p.Weeks.Count || nr >= 7) continue;
+            if (p.Weeks[nc][nr] is { Count: > 0 }) return true;
+        }
+        return false;
+    }
+
+    (int X, int Y) TilePos(Day d)
     {
         for (int c = 0; c < p.Weeks.Count; c++)
         for (int r = 0; r < 7; r++)
-            if (p.Weeks[c][r]?.Date == d.Date)
-                return (mapX + (c + 1) * TileW + TileW / 2.0, mapY + (r + 1) * TileH + 16);
+            if (p.Weeks[c][r]?.Date == d.Date) return (GridX + c * Cell, GridY + r * Cell);
         return (0, 0);
     }
 
@@ -187,14 +237,10 @@ class DungeonRenderer(Profile p)
     {
         int best = 0, run = 0;
         foreach (var d in days) { run = d.Count > 0 ? run + 1 : 0; best = Math.Max(best, run); }
-        // Current streak: count back from today; today with 0 commits doesn't break it yet.
         var cur = new List<Day>();
         int i = days.Count - 1;
-        if (i >= 0 && days[i].Count == 0) i--;
+        if (i >= 0 && days[i].Count == 0) i--;          // today not done yet doesn't break the streak
         for (; i >= 0 && days[i].Count > 0; i--) cur.Insert(0, days[i]);
         return (cur.Count, best, cur);
     }
-
-    static string Glyph(double x, double y, string g, string color, bool glow = false) =>
-        $"""<text class="t" x="{x:0.#}" y="{y:0.#}" fill="{color}"{(glow ? " filter=\"url(#glow)\"" : "")}>{g}</text>""";
 }
