@@ -52,10 +52,14 @@ static class GitHub
             new StringContent(body, Encoding.UTF8, "application/json"));
         res.EnsureSuccessStatusCode();
         var json = JsonNode.Parse(await res.Content.ReadAsStringAsync())!;
+        // GraphQL can return partial data: e.g. an organisation that blocks your token hides just
+        // that one pinned repo. Keep going with whatever came back and only fail if the user is missing.
         if (json["errors"] is JsonArray errs)
-            throw new Exception("GraphQL error: " + string.Join("; ", errs.Select(e => e?["message"])));
+            foreach (var e in errs)
+                Console.WriteLine($"::warning::GitHub API: {e?["message"]} (path: {e?["path"]?.ToJsonString()})");
 
-        var u = json["data"]!["user"]!;
+        var u = json["data"]?["user"]
+            ?? throw new Exception("GitHub API returned no user data. Check the token in the PROFILE_TOKEN secret.");
 
         // --- Contribution calendar (API version; replaced by the profile page version below)
         var cal = u["contributionsCollection"]!["contributionCalendar"]!;
@@ -91,16 +95,19 @@ static class GitHub
             .OrderByDescending(l => l.Bytes)
             .ToList();
 
-        var pinned = u["pinnedItems"]!["nodes"]!.AsArray().OfType<JsonNode>().Select(ToRepo).ToList();
+        var pinned = (u["pinnedItems"]?["nodes"]?.AsArray() ?? [])
+            .OfType<JsonNode>()                       // blocked repos come back as null: skip them
+            .Where(n => n["name"] is not null)
+            .Select(ToRepo).ToList();
         if (pinned.Count == 0) pinned = repoNodes.Take(6).Select(ToRepo).ToList();   // nothing pinned: latest repos
 
         return new Profile(weeks, total,
             Stars: repoNodes.Sum(n => (int)n["stargazerCount"]!),
             Repos: (int)u["repositories"]!["totalCount"]!,
             Followers: (int)u["followers"]!["totalCount"]!,
-            PullRequests: (int)u["pullRequests"]!["totalCount"]!,
-            Issues: (int)u["issues"]!["totalCount"]!,
-            ContributedTo: (int)u["repositoriesContributedTo"]!["totalCount"]!,
+            PullRequests: (int?)u["pullRequests"]?["totalCount"] ?? 0,
+            Issues: (int?)u["issues"]?["totalCount"] ?? 0,
+            ContributedTo: (int?)u["repositoriesContributedTo"]?["totalCount"] ?? 0,
             CreatedAt: DateTime.Parse((string)u["createdAt"]!, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal),
             Languages: languages,
             Pinned: pinned);
