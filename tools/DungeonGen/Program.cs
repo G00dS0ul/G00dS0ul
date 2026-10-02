@@ -1,6 +1,8 @@
 // G00dS0ul Dungeon Generator
 // Turns your GitHub contribution calendar into a roguelike dungeon map (SVG).
-//   dotnet run -- <username> [outputPath]
+//   dotnet run -- <username> [svgPath] [htmlPath]
+// svgPath  -> static image for the README (with best-day / today callouts)
+// htmlPath -> interactive page for GitHub Pages (hover any tile for details)
 // Needs env var PROFILE_TOKEN (or GITHUB_TOKEN) to call the GitHub GraphQL API.
 using System.Globalization;
 using System.Net.Http.Headers;
@@ -10,15 +12,22 @@ using System.Text.Json.Nodes;
 
 var user = args.Length > 0 ? args[0] : "G00dS0ul";
 var output = args.Length > 1 ? args[1] : "assets/dungeon.svg";
+var htmlOutput = args.Length > 2 ? args[2] : "docs/index.html";
 var token = Environment.GetEnvironmentVariable("PROFILE_TOKEN")
          ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN")
          ?? throw new InvalidOperationException("Set PROFILE_TOKEN or GITHUB_TOKEN.");
 
 var profile = await GitHub.FetchAsync(user, token);
-var svg = new DungeonRenderer(profile).Render();
-Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
-await File.WriteAllTextAsync(output, svg);
-Console.WriteLine($"Dungeon written to {output} ({profile.Weeks.Count} weeks, {profile.Total} XP).");
+var renderer = new DungeonRenderer(profile);
+await Write(output, renderer.Render(interactive: false));
+await Write(htmlOutput, HtmlPage.Build(user, renderer.Render(interactive: true)));
+Console.WriteLine($"Dungeon written to {output} and {htmlOutput} ({profile.Weeks.Count} weeks, {profile.Total} XP).");
+
+static async Task Write(string path, string content)
+{
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+    await File.WriteAllTextAsync(path, content);
+}
 
 // ---------------- Data ----------------
 record Day(DateOnly Date, int Count);
@@ -92,11 +101,13 @@ class DungeonRenderer(Profile p)
     static readonly string[] FloorColors = ["#0e5a22", "#16912f", "#22cc46", "#7dff8f"];
     static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
-    public string Render()
+    public string Render(bool interactive)
     {
         var days = p.AllDays.ToList();
         int max = Math.Max(1, days.Count == 0 ? 1 : days.Max(d => d.Count));
         var (current, best, streakDays) = Streaks(days);
+        var bestDay = days.Where(d => d.Count == max).LastOrDefault();
+        var today = days.LastOrDefault();
         var sb = new StringBuilder();
 
         sb.Append($$"""
@@ -123,7 +134,8 @@ class DungeonRenderer(Profile p)
           <line x1="{{W - 14}}" y1="0" x2="{{W - 14}}" y2="{{H}}" stroke="{{Green}}" stroke-width="3"/>
         </g>
         <text class="ui" x="40" y="30" fill="{{Green}}" filter="url(#glow)">&gt; ./explore --dungeon "my last 365 days"</text>
-        <text class="small" x="40" y="50" fill="{{Label}}">Every tile is one day. Dark stone = no commits. Lit floor = I was coding. Treasure = my biggest days.</text>
+        <text class="small" x="40" y="50" fill="{{Label}}">Every tile is one day. Dark stone = no commits. Brighter floor = more commits. Gold frame = my best day.</text>
+        <text class="lbl" x="{{W - 40}}" y="30" fill="{{Green}}" text-anchor="end" filter="url(#glow)">{{(interactive ? "[ hover any tile ]" : "[ click to explore ▶ ]")}}</text>
 
         """);
 
@@ -152,19 +164,34 @@ class DungeonRenderer(Profile p)
             if (day is null) continue;
             int x = GridX + c * Cell, y = GridY + r * Cell;
             int lvl = Level(day.Count, max);
+            if (interactive)
+            {
+                var tip = Tooltip(day);
+                sb.Append($"""<g class="day" data-tip="{tip}"><title>{tip}</title>""");
+            }
             if (lvl == 0)
             {
                 sb.Append($"""<use href="#wall" x="{x}" y="{y}"/>""");
                 if (NextToFloor(c, r, max) && rng.NextDouble() < 0.06) torches.Add((x, y));
-                continue;
             }
-            var glow = lvl >= 3 ? " filter=\"url(#glow)\"" : "";
-            sb.Append($"""<rect x="{x}" y="{y}" width="{Tile}" height="{Tile}" fill="{FloorColors[lvl - 1]}"{glow}/>""");
-            if (lvl == 4) sb.Append($"""<use href="#chest" x="{x}" y="{y}"/>""");
+            else
+            {
+                var glow = lvl >= 3 ? " filter=\"url(#glow)\"" : "";
+                sb.Append($"""<rect x="{x}" y="{y}" width="{Tile}" height="{Tile}" fill="{FloorColors[lvl - 1]}"{glow}/>""");
+                if (lvl == 4) sb.Append($"""<use href="#chest" x="{x}" y="{y}"/>""");
+            }
+            if (interactive) sb.Append("</g>");
         }
         foreach (var (x, y) in torches)
             sb.Append($"""<g class="torch" filter="url(#glow)"><rect x="{x + 6}" y="{y + 6}" width="2" height="6" fill="#7a4a12"/><rect x="{x + 5}" y="{y + 2}" width="4" height="4" fill="#ffae2b"/></g>""");
         sb.Append('\n');
+
+        // Gold frame around the best day
+        if (bestDay is not null)
+        {
+            var (bx0, by0) = TilePos(bestDay);
+            sb.Append($"""<rect class="torch" x="{bx0 - 2}" y="{by0 - 2}" width="{Tile + 4}" height="{Tile + 4}" fill="none" stroke="#ffd84d" stroke-width="2" filter="url(#glow)" pointer-events="none"/>""");
+        }
 
         // The hero walks the current streak (or stands on the latest active day)
         var path = streakDays.Count > 0 ? streakDays : days.Where(d => d.Count > 0).TakeLast(1).ToList();
@@ -172,7 +199,7 @@ class DungeonRenderer(Profile p)
         {
             var pts = path.Select(TilePos).ToList();
             var last = pts[^1];
-            sb.Append($"""<g filter="url(#glow)" transform="translate({last.X} {last.Y})"><rect width="{Tile}" height="{Tile}" fill="#000" fill-opacity=".55"/><g class="bob"><use href="#hero"/></g>""");
+            sb.Append($"""<g filter="url(#glow)" pointer-events="none" transform="translate({last.X} {last.Y})"><rect width="{Tile}" height="{Tile}" fill="#000" fill-opacity=".55"/><g class="bob"><use href="#hero"/></g>""");
             if (pts.Count > 1)
             {
                 var values = string.Join(";", pts.Select(pt => $"{pt.X} {pt.Y}"));
@@ -188,14 +215,21 @@ class DungeonRenderer(Profile p)
         for (int i = 0; i < 4; i++)
             sb.Append($"""<rect x="{GridX + 146 + i * Cell}" y="{ly}" width="{Tile}" height="{Tile}" fill="{FloorColors[i]}"/>""");
         sb.Append($"""<use href="#chest" x="{GridX + 146 + 3 * Cell}" y="{ly}"/><text class="lbl" x="{GridX + 220}" y="{ly + 11}" fill="{Label}">many (treasure)</text>""");
-        sb.Append($"""<use href="#hero" x="{GridX + 370}" y="{ly}"/><text class="lbl" x="{GridX + 390}" y="{ly + 11}" fill="{Label}">me, walking my current streak</text>""");
+        sb.Append($"""<use href="#hero" x="{GridX + 370}" y="{ly}"/><text class="lbl" x="{GridX + 390}" y="{ly + 11}" fill="{Label}">me (today) walking my streak</text>""");
+        sb.Append($"""<rect x="{GridX + 640}" y="{ly}" width="{Tile}" height="{Tile}" fill="none" stroke="#ffd84d" stroke-width="2"/><text class="lbl" x="{GridX + 662}" y="{ly + 11}" fill="{Label}">best day</text>""");
         sb.Append('\n');
 
         // Stat boxes
-        int by = ly + 34, bw = 280, gap = 20, bx = (W - (3 * bw + 2 * gap)) / 2;
-        string[] titles = ["XP · contributions", "STREAK · days in a row", "LOOT"];
-        string[] values2 = [$"{p.Total}", $"{current} (best {best})", $"★{p.Stars}  ·  {p.Repos} repos"];
-        for (int i = 0; i < 3; i++)
+        int by = ly + 34, bw = 205, gap = 16, bx = (W - (4 * bw + 3 * gap)) / 2;
+        string[] titles = ["XP · contributions", "STREAK · days in a row", "BEST DAY", "TODAY"];
+        string[] values2 =
+        [
+            $"{p.Total}",
+            $"{current} (best {best})",
+            bestDay is null ? "—" : $"{bestDay.Count} · {bestDay.Date.ToString("MMM d", Inv)}",
+            today is null ? "—" : $"{today.Count} commit{(today.Count == 1 ? "" : "s")}",
+        ];
+        for (int i = 0; i < 4; i++)
         {
             int x = bx + i * (bw + gap);
             sb.Append($"""<rect x="{x}" y="{by}" width="{bw}" height="62" rx="4" fill="#001a06" stroke="{Dim}" stroke-opacity=".7"/>""");
@@ -209,6 +243,14 @@ class DungeonRenderer(Profile p)
         </svg>
         """);
         return sb.ToString();
+    }
+
+    static string Tooltip(Day d)
+    {
+        var n = d.Date.Day;
+        var suffix = (n % 100) is 11 or 12 or 13 ? "th" : (n % 10) switch { 1 => "st", 2 => "nd", 3 => "rd", _ => "th" };
+        var what = d.Count switch { 0 => "No contributions", 1 => "1 contribution", _ => $"{d.Count} contributions" };
+        return $"{what} on {d.Date.ToString("MMMM", Inv)} {n}{suffix}.";
     }
 
     static int Level(int count, int max) => count == 0 ? 0
@@ -243,4 +285,46 @@ class DungeonRenderer(Profile p)
         for (; i >= 0 && days[i].Count > 0; i--) cur.Insert(0, days[i]);
         return (cur.Count, best, cur);
     }
+}
+
+// ---------------- Interactive page (GitHub Pages) ----------------
+static class HtmlPage
+{
+    public static string Build(string user, string svg) => $$"""
+    <!doctype html>
+    <html lang="en">
+    <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{user}} :: Dungeon</title>
+    <style>
+      body{margin:0;min-height:100vh;background:#000;color:#00FF00;font-family:"Courier New",Consolas,monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;box-sizing:border-box}
+      .wrap{width:100%;max-width:1200px}
+      svg{width:100%;height:auto;display:block}
+      .day{cursor:crosshair}
+      .day:hover{filter:brightness(2.2) drop-shadow(0 0 3px #00FF00)}
+      #tip{position:fixed;pointer-events:none;background:#001a06;border:1px solid #00FF00;color:#00FF00;padding:6px 10px;font-size:14px;border-radius:4px;box-shadow:0 0 12px #00FF0066;opacity:0;transition:opacity .1s;white-space:nowrap}
+      a{color:#00a83a} a:hover{color:#00FF00}
+    </style>
+    </head>
+    <body>
+    <div class="wrap">{{svg}}</div>
+    <a href="https://github.com/{{user}}">&lt; back to github.com/{{user}}</a>
+    <div id="tip"></div>
+    <script>
+      const tip = document.getElementById('tip');
+      document.querySelectorAll('.day').forEach(g => {
+        g.querySelector('title')?.remove();               // use our styled tooltip instead
+        g.addEventListener('mousemove', e => {
+          tip.textContent = g.dataset.tip;
+          tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8) + 'px';
+          tip.style.top = (e.clientY - 40) + 'px';
+          tip.style.opacity = 1;
+        });
+        g.addEventListener('mouseleave', () => tip.style.opacity = 0);
+      });
+    </script>
+    </body>
+    </html>
+    """;
 }
