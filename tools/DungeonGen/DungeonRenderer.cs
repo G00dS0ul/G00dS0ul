@@ -7,9 +7,9 @@ using System.Text;
 //   '@' sprite  -> you, walking your current streak
 class DungeonRenderer(Profile p)
 {
-    const int W = 960, H = 320;           // multiple of 40 so the console grid lines up
+    const int W = 960, H = 400;           // multiple of 40 so the console grid lines up
     const int Cell = 16, Tile = 14;
-    const int GridX = 76, GridY = 76;
+    const int GridX = 76, GridY = 156;     // sky strip sits above the grid (y 56-140)
     const string Green = "#00FF00", Dim = "#00a83a", Label = "#2f8f45";
     static readonly string[] FloorColors = ["#0e5a22", "#16912f", "#22cc46", "#7dff8f"];
     static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
@@ -51,6 +51,8 @@ class DungeonRenderer(Profile p)
         {{(interactive ? HoverHint() : ExploreButton())}}
 
         """);
+
+        sb.Append(NightSky.Render(W));
 
         // Month labels + weekday labels
         string? lastMonth = null;
