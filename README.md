@@ -1,5 +1,6 @@
 <p align="center">
   <img src="./assets/header.svg" width="100%" align="top">
+  <img src="./assets/dungeon.svg" width="100%" align="top">
   <img src="./assets/footer.svg" width="100%" align="top">
 </p>
 
