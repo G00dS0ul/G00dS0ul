@@ -1,7 +1,7 @@
 <p align="center">
   <img src="./assets/header.svg?v=8ee40ccb" width="100%" align="top">
-  <a href="https://g00ds0ul.github.io/G00dS0ul/"><img src="./assets/dungeon.svg?v=0f500e53" width="100%" align="top"></a>
-  <img src="./assets/inventory.svg?v=2a56899a" width="100%" align="top">
+  <a href="https://g00ds0ul.github.io/G00dS0ul/"><img src="./assets/dungeon.svg?v=75f0e603" width="100%" align="top"></a>
+  <img src="./assets/inventory.svg?v=f0d6f645" width="100%" align="top">
 <!-- QUESTS:START -->
 <a href="https://github.com/G00dS0ul/G00DS0ULRPG_Engine"><img src="./assets/quest-1.svg?v=a87673c3" width="50%" align="top" alt="G00DS0ULRPG_Engine"></a><a href="https://github.com/GS-SystemAnalyzer/core"><img src="./assets/quest-2.svg?v=22115b69" width="50%" align="top" alt="core"></a>
 <a href="https://github.com/G00dS0ul/RogueGame-MonoGame"><img src="./assets/quest-3.svg?v=7dc1bc3a" width="50%" align="top" alt="RogueGame-MonoGame"></a><a href="https://github.com/G00dS0ul/G00DS0ULCHECKERS"><img src="./assets/quest-4.svg?v=86070410" width="50%" align="top" alt="G00DS0ULCHECKERS"></a>
