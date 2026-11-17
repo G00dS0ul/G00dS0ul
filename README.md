@@ -1,11 +1,11 @@
 <p align="center">
   <img src="./assets/header.svg?v=8ee40ccb" width="100%" align="top">
-  <a href="https://g00ds0ul.github.io/G00dS0ul/"><img src="./assets/dungeon.svg?v=1aca27c3" width="100%" align="top"></a>
-  <img src="./assets/inventory.svg?v=f94afad6" width="100%" align="top">
+  <a href="https://g00ds0ul.github.io/G00dS0ul/"><img src="./assets/dungeon.svg?v=cefcff00" width="100%" align="top"></a>
+  <img src="./assets/inventory.svg?v=fd66351b" width="100%" align="top">
 <!-- QUESTS:START -->
-<a href="https://github.com/G00dS0ul/G00DS0ULRPG_Engine"><img src="./assets/quest-1.svg?v=77dcade9" width="50%" align="top" alt="G00DS0ULRPG_Engine"></a><a href="https://github.com/GS-SystemAnalyzer/core"><img src="./assets/quest-2.svg?v=9c03a8f5" width="50%" align="top" alt="core"></a>
-<a href="https://github.com/G00dS0ul/RogueGame-MonoGame"><img src="./assets/quest-3.svg?v=9ea3b801" width="50%" align="top" alt="RogueGame-MonoGame"></a><a href="https://github.com/G00dS0ul/G00DS0ULCHECKERS"><img src="./assets/quest-4.svg?v=8cd956c4" width="50%" align="top" alt="G00DS0ULCHECKERS"></a>
-<a href="https://github.com/G00dS0ul/Learning-Csharp"><img src="./assets/quest-5.svg?v=6151a214" width="50%" align="top" alt="Learning-Csharp"></a><a href="https://github.com/metacall/core"><img src="./assets/quest-6.svg?v=c673a3d5" width="50%" align="top" alt="core"></a>
+<a href="https://github.com/G00dS0ul/G00DS0ULRPG_Engine"><img src="./assets/quest-1.svg?v=77dcade9" width="50%" align="top" alt="G00DS0ULRPG_Engine"></a><a href="https://github.com/G00dS0ul/RogueGame-MonoGame"><img src="./assets/quest-2.svg?v=86c711cc" width="50%" align="top" alt="RogueGame-MonoGame"></a>
+<a href="https://github.com/G00dS0ul/G00DS0ULCHECKERS"><img src="./assets/quest-3.svg?v=16b569a2" width="50%" align="top" alt="G00DS0ULCHECKERS"></a><a href="https://github.com/G00dS0ul/Learning-Csharp"><img src="./assets/quest-4.svg?v=dc429800" width="50%" align="top" alt="Learning-Csharp"></a>
+<a href="https://github.com/metacall/core"><img src="./assets/quest-5.svg?v=6779f5cf" width="50%" align="top" alt="core"></a><img src="./assets/quest-6.svg?v=8df4481a" width="50%" align="top" alt="Locked quest">
 <!-- QUESTS:END -->
   <img src="./assets/about.svg?v=c44e271e" width="100%" align="top">
 <!-- CONNECT:START -->
